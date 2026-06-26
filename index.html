@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>AR con Marcador Hiro - A-Frame + AR.js</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
+  <!-- A-Frame 1.6.0: el motor que dibuja el mundo 3D en el navegador -->
+  <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
+
+  <!-- AR.js para A-Frame: agrega la detección de marcadores y el manejo de la cámara -->
+  <script src="https://raw.githack.com/AR-js-org/AR.js/3.4.7/aframe/build/aframe-ar.js"></script>
+
+  <style>
+    body { margin: 0; overflow: hidden; }
+
+    #ui-overlay {
+      position: fixed;
+      top: 0; left: 0; width: 100%;
+      z-index: 999;
+      text-align: center;
+      padding: 14px 10px;
+      font-family: Arial, Helvetica, sans-serif;
+      color: #fff;
+      background: linear-gradient(to bottom, rgba(0,0,0,0.65), rgba(0,0,0,0));
+      pointer-events: none;
+      transition: opacity 0.4s ease;
+    }
+    #ui-overlay h1 { font-size: 16px; margin: 0 0 4px; }
+    #ui-overlay p  { font-size: 13px; margin: 0; opacity: 0.9; }
+  </style>
+</head>
+<body>
+
+  <!-- Mensaje flotante encima de la cámara, con instrucciones para el usuario -->
+  <div id="ui-overlay">
+    <h1>❤️ AR con marcador Hiro</h1>
+    <p>Apunta la cámara al marcador Hiro para ver el corazón 3D</p>
+  </div>
+
+  <a-scene
+    vr-mode-ui="enabled: false"
+    renderer="logarithmicDepthBuffer: true; precision: medium;"
+    embedded
+    arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3;"
+  >
+
+    <!--
+      Precargamos el modelo 3D aquí para que esté listo apenas se detecte el marcador.
+      IMPORTANTE: este "src" es una ruta LOCAL relativa. Debes descargar el archivo
+      heart.glb y subirlo junto a este index.html, dentro de una carpeta "models".
+
+      Dónde descargarlo (gratis, sin login, licencia CC0 - dominio público):
+      "Heart" by Quaternius -> https://poly.pizza/m/1yCRUwFnwX  (botón "Download")
+
+      Estructura final de carpetas que debes subir a tu servidor:
+        index.html
+        models/
+          heart.glb
+    -->
+    <a-assets>
+      <a-asset-item
+        id="heartModel"
+        src="models/heart.glb">
+      </a-asset-item>
+    </a-assets>
+
+    <!-- Marcador Hiro: todo lo que esté dentro solo se muestra cuando la cámara lo ve -->
+    <a-marker preset="hiro" id="hiroMarker">
+      <a-entity
+        gltf-model="#heartModel"
+        position="0 0 0"
+        scale="0.5 0.5 0.5"
+        rotation="0 0 0"
+        animation="property: rotation; to: 0 360 0; loop: true; dur: 6000; easing: linear"
+      ></a-entity>
+    </a-marker>
+
+    <!-- Cámara controlada por AR.js (se mueve según el marcador detectado) -->
+    <a-entity camera></a-entity>
+
+  </a-scene>
+
+  <script>
+    // Pequeñas mejoras de experiencia: avisar si no hay permiso de cámara,
+    // y atenuar el mensaje de instrucciones cuando el marcador ya fue encontrado.
+    var sceneEl  = document.querySelector('a-scene');
+    var markerEl = document.querySelector('#hiroMarker');
+    var overlay  = document.getElementById('ui-overlay');
+
+    sceneEl.addEventListener('camera-error', function () {
+      overlay.innerHTML =
+        '<h1>⚠️ No se pudo acceder a la cámara</h1>' +
+        '<p>Revisa los permisos de cámara del navegador y recarga la página.</p>';
+    });
+
+    markerEl.addEventListener('markerFound', function () {
+      overlay.style.opacity = '0.25';
+    });
+
+    markerEl.addEventListener('markerLost', function () {
+      overlay.style.opacity = '1';
+    });
+  </script>
+
+</body>
+</html>
